@@ -46,9 +46,12 @@ pipeline {
             steps {
                 script {
                     def response = httpRequest url: "http://localhost:${PORT}"
-                    def responseMD5 = sh(script: "echo '${response.content}' | md5sum | awk '{print \$1}'", returnStdout: true).trim()
-                    
-                    if (responseMD5 != env.FILE_MD5) {
+                    // Сохраняем ответ в файл
+                    writeFile file: 'response.html', text: response.content
+                    // Удаляем все пробелы и переводы строк для сравнения
+                    def fileMD5 = sh(script: "cat index.html | tr -d '\\n\\r ' | md5sum | awk '{print \$1}'", returnStdout: true).trim()
+                    def responseMD5 = sh(script: "cat response.html | tr -d '\\n\\r ' | md5sum | awk '{print \$1}'", returnStdout: true).trim()
+                    if (responseMD5 != fileMD5) {
                         currentBuild.result = 'FAILURE'
                         error "MD5 sums do not match"
                     }
